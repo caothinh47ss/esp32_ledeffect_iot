@@ -1,12 +1,12 @@
-// Cấu hình Firebase - ĐIỀN ĐẦY ĐỦ THÔNG TIN
+// Cấu hình Firebase (dùng thông tin bạn cung cấp)
 const firebaseConfig = {
     apiKey: "AIzaSyCXr1b9JdD0qfYT0w1SOj9c-RSg9ImbWN0",
-    authDomain: "led-effect.firebaseapp.com",      // Kiểm tra lại
+    authDomain: "led-effect.firebaseapp.com",
     databaseURL: "https://led-effect-default-rtdb.asia-southeast1.firebasedatabase.app",
     projectId: "led-effect",
-    storageBucket: "led-effect.appspot.com",       // Mặc định
-    messagingSenderId: "YOUR_SENDER_ID",           // Thay bằng số thực
-    appId: "YOUR_APP_ID"                            // Thay bằng số thực
+    storageBucket: "led-effect.firebasestorage.app",
+    messagingSenderId: "387848661922",
+    appId: "1:387848661922:web:28e7ac83a7c6e36fc6e0fb"
 };
 
 // Khởi tạo Firebase
@@ -39,10 +39,12 @@ connectedRef.on('value', (snap) => {
 
 // Đợi DOM load xong
 document.addEventListener('DOMContentLoaded', () => {
+    // Theo dõi trạng thái đăng nhập
     auth.onAuthStateChanged(user => {
-        console.log('Auth state changed:', user); // Log để debug
+        console.log('Auth state changed:', user);
         if (user) {
             currentUser = user;
+            console.log('Logged in as:', user.email, 'UID:', user.uid);
             showControlPanel();
             loadLEDsData();
         } else {
@@ -55,13 +57,13 @@ document.addEventListener('DOMContentLoaded', () => {
 window.login = () => {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
-    console.log('Attempting login with:', email); // Log
+    console.log('Attempting login with:', email);
     auth.signInWithEmailAndPassword(email, password)
-        .then(userCredential => {
+        .then((userCredential) => {
             console.log('Login success:', userCredential.user);
         })
         .catch(error => {
-            console.error('Login error:', error); // Log chi tiết
+            console.error('Login error:', error);
             document.getElementById('login-error').innerText = error.message;
         });
 };
@@ -92,8 +94,8 @@ function loadLEDsData() {
         } else {
             ledsRef.set(ledStates);
         }
-    }, error => {
-        console.error('Database read error:', error); // Log lỗi database
+    }, (error) => {
+        console.error('Database read error:', error);
     });
 }
 
