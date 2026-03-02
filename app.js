@@ -1,12 +1,12 @@
-// Cấu hình Firebase (thay bằng thông số của bạn)
+// Cấu hình Firebase - ĐIỀN ĐẦY ĐỦ THÔNG TIN
 const firebaseConfig = {
-    apiKey: "AIzaSy...",
-    authDomain: "...",
-    databaseURL: "https://...firebaseio.com",
-    projectId: "...",
-    storageBucket: "...",
-    messagingSenderId: "...",
-    appId: "..."
+    apiKey: "AIzaSyCXr1b9JdD0qfYT0w1SOj9c-RSg9ImbWN0",
+    authDomain: "led-effect.firebaseapp.com",      // Kiểm tra lại
+    databaseURL: "https://led-effect-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "led-effect",
+    storageBucket: "led-effect.appspot.com",       // Mặc định
+    messagingSenderId: "YOUR_SENDER_ID",           // Thay bằng số thực
+    appId: "YOUR_APP_ID"                            // Thay bằng số thực
 };
 
 // Khởi tạo Firebase
@@ -39,8 +39,8 @@ connectedRef.on('value', (snap) => {
 
 // Đợi DOM load xong
 document.addEventListener('DOMContentLoaded', () => {
-    // Theo dõi trạng thái đăng nhập
     auth.onAuthStateChanged(user => {
+        console.log('Auth state changed:', user); // Log để debug
         if (user) {
             currentUser = user;
             showControlPanel();
@@ -55,30 +55,34 @@ document.addEventListener('DOMContentLoaded', () => {
 window.login = () => {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
+    console.log('Attempting login with:', email); // Log
     auth.signInWithEmailAndPassword(email, password)
+        .then(userCredential => {
+            console.log('Login success:', userCredential.user);
+        })
         .catch(error => {
+            console.error('Login error:', error); // Log chi tiết
             document.getElementById('login-error').innerText = error.message;
         });
 };
 
 // Hàm đăng xuất
 window.logout = () => {
-    auth.signOut();
+    auth.signOut().then(() => {
+        console.log('Logged out');
+    });
 };
 
-// Hiển thị panel điều khiển
 function showControlPanel() {
     document.getElementById('login-container').style.display = 'none';
     document.getElementById('control-container').style.display = 'block';
 }
 
-// Hiển thị panel đăng nhập
 function showLoginPanel() {
     document.getElementById('login-container').style.display = 'block';
     document.getElementById('control-container').style.display = 'none';
 }
 
-// Tải dữ liệu LED từ database và lắng nghe thay đổi
 function loadLEDsData() {
     const ledsRef = database.ref('leds');
     ledsRef.on('value', snapshot => {
@@ -86,13 +90,13 @@ function loadLEDsData() {
             ledStates = snapshot.val();
             renderLEDs();
         } else {
-            // Nếu chưa có dữ liệu, tạo mặc định
             ledsRef.set(ledStates);
         }
+    }, error => {
+        console.error('Database read error:', error); // Log lỗi database
     });
 }
 
-// Render giao diện 3 LED
 function renderLEDs() {
     const panel = document.getElementById('leds-panel');
     panel.innerHTML = '';
@@ -100,7 +104,6 @@ function renderLEDs() {
         const ledId = `led${i}`;
         const state = ledStates[ledId] || { mode: 'off', pwmValue: 128, blinkInterval: 500 };
         
-        // Xác định trạng thái hiển thị
         let statusText = '';
         let statusClass = '';
         switch (state.mode) {
@@ -125,7 +128,6 @@ function renderLEDs() {
                 statusClass = 'off';
         }
 
-        // Tạo card
         const card = document.createElement('div');
         card.className = 'led-card';
         card.innerHTML = `
@@ -151,38 +153,27 @@ function renderLEDs() {
         panel.appendChild(card);
     }
 
-    // Gắn sự kiện cho các nút
     document.querySelectorAll('.led-btn[data-led]').forEach(btn => {
         btn.addEventListener('click', handleButtonClick);
     });
 }
 
-// Xử lý khi nhấn nút
 function handleButtonClick(event) {
     const btn = event.currentTarget;
     const ledId = btn.dataset.led;
-    const mode = btn.dataset.mode; // 'toggle', 'pwm', 'blink'
+    const mode = btn.dataset.mode;
     const currentState = ledStates[ledId];
 
     let newMode;
     if (mode === 'toggle') {
-        // Nếu đang on -> off, nếu đang off -> on, nếu đang khác -> on
-        if (currentState.mode === 'on') {
-            newMode = 'off';
-        } else {
-            newMode = 'on';
-        }
+        newMode = (currentState.mode === 'on') ? 'off' : 'on';
     } else {
-        // pwm hoặc blink: nếu đang ở chế độ đó thì tắt, nếu không thì bật chế độ đó
-        if (currentState.mode === mode) {
-            newMode = 'off';
-        } else {
-            newMode = mode;
-        }
+        newMode = (currentState.mode === mode) ? 'off' : mode;
     }
 
-    // Cập nhật lên database
     const updates = {};
     updates[`leds/${ledId}/mode`] = newMode;
-    database.ref().update(updates);
+    database.ref().update(updates).catch(error => {
+        console.error('Update error:', error);
+    });
 }
